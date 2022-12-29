@@ -13,13 +13,11 @@ public class Message {
     }
 
     public String getText() {
-
         return text;
     }
 
     @Override
     public String toString() {
-        //return dateTime.format(formatter) + text;
-        return   text;
+        return dateTime.format(formatter) + text;
     }
 }

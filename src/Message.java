@@ -2,7 +2,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class Message {
-    private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("[dd.MM.yyyy-hh.mm.ss]: ");
+    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("[dd.MM.yyyy-hh.mm.ss]: ");
     private String text;
     private LocalDateTime dateTime;
 

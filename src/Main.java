@@ -1,8 +1,9 @@
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
+import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
@@ -11,14 +12,38 @@ import java.util.Scanner;
 
 public class Main {
 
+    static Cryptor cryptor;
+
     static Scanner scanner = new Scanner(System.in);
 
-    public static void main(String[] args) throws Exception {
-        SecretKey keyFromPassword = getKeyFromPassword("Пароль!", "Соль!!!");
-        IvParameterSpec iv = generateIv();
+    public static void main(String[] args) {
+        try {
+            beginEncryption();
+        } catch (NoSuchAlgorithmException e) {
+            System.out.println("Возникло непредвиденное исключение: " + e.getMessage());
+        } catch (InvalidKeySpecException e) {
+            System.out.println("Возникло непредвиденное исключение: " + e.getMessage());
+        } catch (InvalidAlgorithmParameterException e) {
+            System.out.println("Возникло непредвиденное исключение: " + e.getMessage());
+        } catch (NoSuchPaddingException e) {
+            System.out.println("Возникло непредвиденное исключение: " + e.getMessage());
+        } catch (IllegalBlockSizeException e) {
+            System.out.println("Возникло непредвиденное исключение: " + e.getMessage());
+        } catch (BadPaddingException e) {
+            System.out.println("Возникло непредвиденное исключение: " + e.getMessage());
+        } catch (InvalidKeyException e) {
+            System.out.println("Возникло непредвиденное исключение: " + e.getMessage());
+        }
+    }
 
-        Encryptor encryptor = new Encryptor(keyFromPassword, iv);
-        Decryptor decryptor = new Decryptor(keyFromPassword, iv);
+    public static void beginEncryption() throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
+        System.out.println("Введите пароль для шифрования");
+        String password = scanner.nextLine();
+        System.out.println("Введите соль для шифрования");
+        String salt = scanner.nextLine();
+        SecretKey keyFromPassword = getKeyFromPassword(password, salt);
+        IvParameterSpec iv = generateIv();
+        cryptor = new Cryptor(keyFromPassword, iv);
 
         while (true) {
             System.out.println("Введите сообщение для шифрования...");
@@ -26,20 +51,30 @@ public class Main {
             if ("end".equals(msg.getText())) {
                 break;
             }
-            System.out.println("начинаем кодировать сообщение");
 
-            String encrypted = encryptor.encrypt(msg.toString());
-            System.out.println("Зашифрованная строка: " + encrypted);
+            if (msg.getText() == null || msg.getText().length() == 0) {
+                continue;
+            }
+            String result = "";
+            try {
+                result = cryptor.decrypt(msg.getText());
+                System.out.println("Упс... Строка уже зашифрована, сейчас покажем её расшифрованный вариант");
+            } catch (IllegalArgumentException e) {
+                System.out.println("Строка не зашифрована. Начинаем кодировать сообщение");
 
-            String decrypted = decryptor.decrypt(encrypted);
-            System.out.println("Расшифрованная строка: " + decrypted);
+                String encrypted = cryptor.encrypt(msg.toString());
+                System.out.println("Зашифрованная строка: " + encrypted);
+
+                result = cryptor.decrypt(encrypted);
+            }
+
+            System.out.println("Результат дешифрования: " + result);
         }
     }
 
     public static Message getInput() {
         String input = scanner.nextLine();
-        Message message = new Message(input);
-        return message;
+        return new Message(input);
     }
 
     public static SecretKey getKeyFromPassword(String password, String salt)
@@ -47,9 +82,8 @@ public class Main {
 
         SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
         KeySpec spec = new PBEKeySpec(password.toCharArray(), salt.getBytes(), 65536, 256);
-        SecretKey secret = new SecretKeySpec(factory.generateSecret(spec)
+        return new SecretKeySpec(factory.generateSecret(spec)
                 .getEncoded(), "AES");
-        return secret;
     }
 
     public static IvParameterSpec generateIv() {
@@ -58,5 +92,7 @@ public class Main {
         return new IvParameterSpec(iv);
     }
 
+
 }
+
 
